@@ -1,4 +1,4 @@
-package main
+package item
 
 import (
 	"encoding/json"
@@ -35,4 +35,40 @@ func convertByteArrayToString(b [][]byte) []string {
 		strs[i] = string(v)
 	}
 	return strs
+}
+
+func (item *Item) UnmarshalJSON(data []byte) error {
+	var v struct {
+		Question string   `json:"question"`
+		Value    []string `json:"value"`
+		Content  []string `json:"content"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	// fmt.Println("v: ", v.Question)
+	item.Question = []byte(v.Question)
+	item.Value = convertStringToByteArray(v.Value)
+	item.Content = convertStringToByteArray(v.Content)
+	return nil
+}
+
+func convertStringToByteArray(s []string) [][]byte {
+	b := make([][]byte, len(s))
+	for i, v := range s {
+		b[i] = []byte(v)
+	}
+	return b
+}
+
+func (item Item) IsValueEqual(value [][]byte) bool {
+	if len(item.Value) != len(value) {
+		return false
+	}
+	for i, item := range item.Value {
+		if string(item) != string(value[i]) {
+			return false
+		}
+	}
+	return true
 }
