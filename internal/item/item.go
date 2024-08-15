@@ -11,6 +11,7 @@ type Item struct {
 	Content         [][]byte
 	ValueStartIndex int
 	Index           int
+	FileName        []byte
 }
 
 func (item Item) String() {
@@ -22,10 +23,12 @@ func (item Item) MarshalJSON() ([]byte, error) {
 		Question string   `json:"question"`
 		Value    []string `json:"value"`
 		Content  []string `json:"content"`
+		FileName string   `json:"filename"`
 	}{
 		Question: string(item.Question),
 		Value:    convertByteArrayToString(item.Value),
 		Content:  convertByteArrayToString(item.Content),
+		FileName: string(item.FileName),
 	})
 }
 
@@ -42,6 +45,7 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 		Question string   `json:"question"`
 		Value    []string `json:"value"`
 		Content  []string `json:"content"`
+		FileName string   `json:"filename"`
 	}
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
@@ -50,6 +54,7 @@ func (item *Item) UnmarshalJSON(data []byte) error {
 	item.Question = []byte(v.Question)
 	item.Value = convertStringToByteArray(v.Value)
 	item.Content = convertStringToByteArray(v.Content)
+	item.FileName = []byte(v.FileName)
 	return nil
 }
 
