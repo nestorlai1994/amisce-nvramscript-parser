@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,12 @@ import (
 
 	"github.com/nestorlai1994/amisce-nvramscript-parser/internal/item"
 )
+
+type Diff struct {
+	ValueDiff  []item.Item `json:"value_diff"`
+	FirstOnly  []item.Item `json:"first_only"`
+	SecondOnly []item.Item `json:"second_only"`
+}
 
 func main() {
 	fmt.Println("Welcome to the NVRAM Script Diff!")
@@ -26,28 +33,45 @@ func main() {
 	fmap := generateMap(fitems)
 	smap := generateMap(sitems)
 
+	diff := Diff{
+		ValueDiff:  make([]item.Item, 0),
+		FirstOnly:  make([]item.Item, 0),
+		SecondOnly: make([]item.Item, 0),
+	}
+
 	for k, v := range fmap {
 		if _, ok := smap[k]; !ok {
 			fmt.Println("Item not found in second file: ", string(k))
-			//fmt.Println("Item: ", v)
+			if !bytes.Contains(v.Question, []byte("Boot Option")) {
+				v.FileName = []byte(ffile)
+				diff.FirstOnly = append(diff.FirstOnly, v)
+				delete(fmap, k)
+			}
 		} else if v.IsValueEqual(smap[k].Value) {
 			delete(fmap, k)
 			delete(smap, k)
 		}
-
 	}
 
-	for k := range smap {
-		if !strings.Contains(k, "Boot Option") {
-			fmt.Printf("question: %s \n", k)
-		}
+	deleteBootOption(fmap)
+	deleteBootOption(smap)
+
+	for k, v := range fmap {
+		v.FileName = []byte(ffile)
+		diff.ValueDiff = append(diff.ValueDiff, v)
+		sv := smap[k]
+		sv.FileName = []byte(sfile)
+		diff.ValueDiff = append(diff.ValueDiff, sv)
+		delete(smap, k)
 	}
 
-	for k := range fmap {
-		if !strings.Contains(k, "Boot Option") {
-			fmt.Printf("first question: %s \n", k)
-		}
+	for _, v := range smap {
+		v.FileName = []byte(sfile)
+		diff.SecondOnly = append(diff.SecondOnly, v)
 	}
+
+	b, _ := json.MarshalIndent(diff, "", "  ")
+	exportToJson(b, "/tmp/diff.json")
 }
 
 func openFile(file string) []byte {
@@ -72,4 +96,21 @@ func generateMap(items []item.Item) map[string]item.Item {
 		m[string(item.Question)] = item
 	}
 	return m
+}
+
+func deleteBootOption(m map[string]item.Item) {
+	for k := range m {
+		if strings.Contains(k, "Boot Option") {
+			delete(m, k)
+		}
+	}
+}
+
+func exportToJson(b []byte, path string) {
+	f, err := os.Create(path)
+	if err != nil {
+		fmt.Println("Error creating file: ", err)
+	}
+	defer f.Close()
+	f.Write(b)
 }
