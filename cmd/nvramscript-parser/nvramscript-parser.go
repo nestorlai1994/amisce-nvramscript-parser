@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"time"
+
+	"github.com/nestorlai1994/amisce-nvramscript-parser/internal/item"
 )
 
 func help() {
@@ -42,7 +44,7 @@ func main() {
 	filePath := os.Args[1]
 	dat, _ := os.ReadFile(filePath)
 
-	confs := make([]Item, 0)
+	confs := make([]item.Item, 0)
 
 	lines := make([][]byte, 0)
 	line := make([]byte, 0)
@@ -63,7 +65,7 @@ func main() {
 
 			if reQuestion.Match(line) {
 				q := reQuestion.FindAllSubmatch(line, -1)
-				confs = append(confs, Item{
+				confs = append(confs, item.Item{
 					Question: bytes.TrimSpace(q[0][1]),
 					Index:    len(confs),
 					Value:    make([][]byte, 0),
@@ -117,7 +119,7 @@ func ridOfComment(line []byte, re *regexp.Regexp) []byte {
 	return bytes.TrimSpace(line)
 }
 
-func exportToJson(confs []Item, path string) {
+func exportToJson(confs []item.Item, path string) {
 	// jsonMarshals := make([][]byte, len(confs))
 	// for i, conf := range confs {
 	// 	dat, _ := conf.MarshalJSON()
