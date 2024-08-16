@@ -1,6 +1,6 @@
 # Usage
 ```
-go run cmd/nvramscript-parser.go /path/to/nmvramscript
+go run cmd/nvramscript-parser/nvramscript-parser.go /path/to/nmvramscript
 # -export-to json
 # -export-path /path/to/destination
 ```
